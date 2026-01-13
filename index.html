@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>AHMED SABRY MOTORS</title>
+<style>
+body{font-family:Arial;background:#f4f6f8;padding:20px}
+.box{background:#fff;max-width:1100px;margin:auto;padding:20px;border-radius:12px;box-shadow:0 0 10px #ccc}
+h2{text-align:center}
+label{display:block;margin-top:8px}
+input{width:100%;padding:7px;margin-top:4px}
+button{padding:8px 14px;margin-top:10px;border:none;border-radius:5px;background:#0d6efd;color:#fff;cursor:pointer;}
+.whatsapp{background:#25d366}
+table{width:100%;border-collapse:collapse;margin-top:15px;font-size:14px}
+th,td{border:1px solid #ccc;padding:6px;text-align:center}
+.totalBox{margin-top:10px;background:#eee;padding:10px;font-weight:bold;}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h2>AHMED SABRY MOTORS – سجل الرحلات</h2>
+
+<label>رقم واتساب لإرسال الفواتير</label>
+<input id="whatsappNumber" type="text" placeholder="مثال: 201012345678">
+
+<label>اسم السائق</label><input id="driver">
+<label>المحافظات / خط السير</label><input id="route">
+<label>سعر التشغيل</label><input id="total" type="number">
+<label>البنزين</label><input id="fuel" type="number">
+<label>المصاريف</label><input id="expenses" type="number">
+<label>مرتب السائق</label><input id="driverSalary" type="number">
+<label>متبقي للسائق كام</label><input id="driverRemain" type="number">
+<label>مرتب عبدالرحمن</label><input id="abdSalary" type="number">
+
+<button onclick="addTrip()">إضافة رحلة</button>
+
+<div class="totalBox">
+إجمالي المتبقي: <span id="sumFinal">0</span> جنيه
+</div>
+
+<table>
+<thead>
+<tr>
+<th>التاريخ</th>
+<th>السائق</th>
+<th>الخط</th>
+<th>التشغيل</th>
+<th>المتبقي النهائي</th>
+<th>فاتورة</th>
+<th>حذف</th>
+</tr>
+</thead>
+<tbody id="table"></tbody>
+</table>
+</div>
+
+<script>
+let trips = JSON.parse(localStorage.getItem("trips") || "[]");
+
+function n(id){ return Number(document.getElementById(id).value || 0); }
+
+function addTrip(){
+    let trip = {
+        date: new Date().toLocaleString("ar-EG"),
+        driver: driver.value||"-",
+        route: route.value||"-",
+        total: n("total"),
+        fuel: n("fuel"),
+        expenses: n("expenses"),
+        driverSalary: n("driverSalary"),
+        driverRemain: n("driverRemain"),
+        abdSalary: n("abdSalary")
+    };
+
+    // حساب المتبقي النهائي مع خصم متبقي السائق
+    trip.final = trip.total - trip.fuel - trip.expenses - trip.driverSalary - trip.driverRemain - trip.abdSalary;
+
+    trips.push(trip);
+    save();
+    render();
+}
+
+function save(){
+    localStorage.setItem("trips",JSON.stringify(trips));
+}
+
+function render(){
+    table.innerHTML = "";
+    let sum = 0;
+    trips.forEach((t,i)=>{
+        sum += t.final;
+        table.innerHTML += `
+        <tr>
+            <td>${t.date}</td>
+            <td>${t.driver}</td>
+            <td>${t.route}</td>
+            <td>${t.total}</td>
+            <td>${t.final}</td>
+            <td><button class="whatsapp" onclick="send(${i})">واتساب</button></td>
+            <td><button onclick="del(${i})">حذف</button></td>
+        </tr>`;
+    });
+    sumFinal.innerText = sum;
+}
+
+function del(i){
+    if(confirm("حذف الرحلة؟")){
+        trips.splice(i,1);
+        save();
+        render();
+    }
+}
+
+function send(i){
+    let t = trips[i];
+    let phone = document.getElementById("whatsappNumber").value;
+    if(!phone){
+        alert("ادخل رقم الواتساب في أعلى الصفحة");
+        return;
+    }
+    let msg = 
+`AHMED SABRY MOTORS
+${t.date}
+
+السائق: ${t.driver}
+الخط: ${t.route}
+
+سعر التشغيل: ${t.total}
+البنزين: ${t.fuel}
+المصاريف: ${t.expenses}
+
+مرتب السائق: ${t.driverSalary}
+متبقي للسائق: ${t.driverRemain}
+مرتب عبدالرحمن: ${t.abdSalary}
+
+المتبقي النهائي: ${t.final}`;
+
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,"_blank");
+}
+
+render();
+</script>
+
+</body>
+</html>
